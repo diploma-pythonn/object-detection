@@ -1,0 +1,8 @@
+path: C:\Users\nitin\Downloads\bestest.v2-roboflow-instant-2--eval-.yolov8
+
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 4
+names: ['Aditya', 'Ankita', 'Anushri', 'Hriday']
