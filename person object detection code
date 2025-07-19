@@ -2,20 +2,23 @@ import cv2
 import time
 from ultralytics import YOLO
 
+# Load model
 model = YOLO(r"C:\Users\Anushrii\Downloads\person detection-20250719T153046Z-1-001\person detection\runs\detect\train\weights\best.pt")
 model.conf = 0.5
 names = model.names
 
+# Open webcam
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 if not cap.isOpened():
     raise SystemExit("❌ Cannot access webcam")
 
+# Window setup
 WIN = "YOLOv8 Detection"
 cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
 time.sleep(1)
-
 print("✅ Press 'q' to quit")
 
+# Detection loop
 while True:
     ok, frame = cap.read()
     if not ok:
@@ -30,20 +33,25 @@ while True:
         label = f"{names[cls]} {conf * 100:.1f}%"
         color = (144, 238, 144)  # Sage green
 
-        # Draw bounding box
+        # Box
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
 
-        # Draw background for text
-        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+        # Label background
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 3)
         cv2.rectangle(frame, (x1, y1 - th - 10), (x1 + tw, y1), (0, 0, 0), -1)
-        cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+
+        # Label text with outline
+        cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 5)
+        cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2)
 
     cv2.imshow(WIN, frame)
 
+    # Exit
     if cv2.getWindowProperty(WIN, cv2.WND_PROP_VISIBLE) < 1:
         break
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+# Cleanup
 cap.release()
 cv2.destroyAllWindows()
