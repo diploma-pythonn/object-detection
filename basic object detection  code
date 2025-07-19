@@ -1,0 +1,49 @@
+
+import cv2
+from ultralytics import YOLO
+import random
+
+# Load pretrained YOLOv8 model
+model = YOLO("yolov8s.pt")  # Or 'yolov8m.pt', 'yolov8n.pt'
+
+# Assign random color for each class
+names = model.names
+colors = {i: (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)) for i in names}
+
+# Open webcam
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+if not cap.isOpened():
+    raise SystemExit("❌ Cannot access webcam")
+
+cv2.namedWindow("Object Detection", cv2.WINDOW_NORMAL)
+print("✅ Detecting all COCO objects. Press 'q' to quit.")
+
+# Detection loop
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    results = model(frame)[0]
+
+    for box in results.boxes:
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        cls = int(box.cls)
+        conf = float(box.conf)
+        label = f"{names[cls]} {conf*100:.1f}%"
+
+        # Use unique color for each class and larger thickness
+        color = colors[cls]
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
+        cv2.putText(frame, label, (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 3)
+
+    cv2.imshow("Object Detection", frame)
+
+    if cv2.getWindowProperty("Object Detection", cv2.WND_PROP_VISIBLE) < 1:
+        break
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
