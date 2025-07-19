@@ -2,66 +2,48 @@ import cv2
 import time
 from ultralytics import YOLO
 
-# ─────────── USER SETTINGS ─────────── #
-MODEL_PATH = r"F:\Anu_AI\last.v2-roboflow-instant-2--eval-.yolov8\runs\detect\train\weights\best.pt"
-CONF_THRES = 0.50      # keep detections with conf ≥ 50 %
-IOU_THRES  = 0.35      # lower = keep more overlapping boxes
-MAX_DET    = 50        # allow many boxes in crowded scenes
-IMG_SIZE   = 960       # inference resolution (higher = better tiny‑face detection)
-BOX_COLOR  = (255, 255, 255)   # white boxes / text
-# ───────────────────────────────────── #
+model = YOLO(r"C:\Users\Anushrii\Downloads\person detection-20250719T153046Z-1-001\person detection\runs\detect\train\weights\best.pt")
+model.conf = 0.5
+names = model.names
 
-# 1. Load YOLOv8 model
-model = YOLO(MODEL_PATH)
-model.conf = CONF_THRES
-names = model.model.names  # index → class name
-
-# 2. Open webcam
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 if not cap.isOpened():
     raise SystemExit("❌ Cannot access webcam")
 
-# 3. Create GUI window
 WIN = "YOLOv8 Detection"
 cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-time.sleep(1)  # warm‑up
+time.sleep(1)
+
 print("✅ Press 'q' to quit")
 
-# 4. Detection loop
 while True:
     ok, frame = cap.read()
     if not ok:
         break
 
-    # Run YOLO (silent, with new crowd‑friendly settings)
-    results = model(
-        frame,
-        imgsz=IMG_SIZE,
-        iou=IOU_THRES,
-        max_det=MAX_DET,
-        verbose=False
-    )[0]
+    results = model(frame, verbose=False)[0]
 
-    # Draw boxes & labels
     for box in results.boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         conf = float(box.conf)
-        cls  = int(box.cls)
+        cls = int(box.cls)
         label = f"{names[cls]} {conf * 100:.1f}%"
+        color = (144, 238, 144)  # Sage green
 
-        cv2.rectangle(frame, (x1, y1), (x2, y2), BOX_COLOR, 2)
-        cv2.putText(frame, label, (x1, y1 - 6),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, BOX_COLOR, 2)
+        # Draw bounding box
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
 
-    # Show result
+        # Draw background for text
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+        cv2.rectangle(frame, (x1, y1 - th - 10), (x1 + tw, y1), (0, 0, 0), -1)
+        cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+
     cv2.imshow(WIN, frame)
 
-    # Quit if window closed or 'q' pressed
     if cv2.getWindowProperty(WIN, cv2.WND_PROP_VISIBLE) < 1:
         break
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# 5. Cleanup
 cap.release()
 cv2.destroyAllWindows()
