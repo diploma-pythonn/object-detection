@@ -4,27 +4,31 @@ import random
 import time
 from ultralytics import YOLO
 
+# Try importing RealSense
 try:
     import pyrealsense2 as rs
     use_realsense = True
 except ImportError:
-    use_realsense = False # if using lapt cam then keep false if use external cam use true
+    use_realsense = False  # Set to False to open for laptop webcam
 
-# Load both models
-custom_model = YOLO(r"C:\Users\Anushrii\Downloads\person detection-20250719T153046Z-1-001\person detection\runs\detect\train\weights\best.pt")
-default_model = YOLO("yolov8s.pt")
+# Load all models
+models = [
+    YOLO(r"D:\Stationary (1)\runs (1)\detect (1)\train (1)\weights (1)\best (1).pt"),
+    YOLO(r"D:\calendar\runs\detect\train4\weights\best.pt"),
+    YOLO(r"D:\IDcard\runs\detect\train4\weights\best.pt"),
+    YOLO(r"D:\pen\runs\detect\train3\weights\best.pt"),
+    YOLO(r"D:\person detection-20250719T153046Z-1-001\person detection\runs\detect\train\weights\best.pt"),
+    YOLO("yolov8s.pt")
+]
 
-custom_names = custom_model.names
-default_names = default_model.names
-
-# Random color per class
+# Color per class label
 class_colors = {}
-def get_color(cls):
-    if cls not in class_colors:
-        class_colors[cls] = tuple(random.randint(100, 255) for _ in range(3))
-    return class_colors[cls]
+def get_color(cls_name):
+    if cls_name not in class_colors:
+        class_colors[cls_name] = tuple(random.randint(100, 255) for _ in range(3))
+    return class_colors[cls_name]
 
-# RealSense or webcam setup
+# Setup RealSense or webcam
 if use_realsense:
     pipeline = rs.pipeline()
     config = rs.config()
@@ -35,13 +39,11 @@ else:
     if not cap.isOpened():
         raise SystemExit("❌ Cannot access webcam")
 
-# GUI
-cv2.namedWindow("YOLOv8 Combo", cv2.WINDOW_NORMAL)
-print("Press 'q' to quit")
-time.sleep(1)
+cv2.namedWindow("YOLOv8 Detection", cv2.WINDOW_NORMAL)
+print("🔁 Press 'q' to quit...")
 
 while True:
-    # Read frame
+    # Get frame
     if use_realsense:
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
@@ -49,33 +51,29 @@ while True:
             continue
         frame = np.asanyarray(color_frame.get_data())
     else:
-        ok, frame = cap.read()
-        if not ok:
+        ret, frame = cap.read()
+        if not ret:
             break
 
-    # Predict from both models
-    results_custom = custom_model(frame, verbose=False)[0]
-    results_default = default_model(frame, verbose=False)[0]
-
-    all_results = [(results_custom, custom_names), (results_default, default_names)]
-
-    for results, names in all_results:
+    # Run all models
+    for model in models:
+        results = model(frame, verbose=False)[0]
         for box in results.boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             conf = float(box.conf)
             cls = int(box.cls)
-            label = f"{names[cls]} {conf*100:.1f}%"
-            color = get_color(names[cls])
+            label_name = model.names[cls]
+            label = f"{label_name} {conf*100:.1f}%"
+            color = get_color(label_name)
 
-            # Draw box
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
             (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
             cv2.rectangle(frame, (x1, y1 - th - 10), (x1 + tw, y1), color, -1)
             cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
-    cv2.imshow("YOLOv8 Combo", frame)
+    cv2.imshow("YOLOv8 Detection", frame)
 
-    if cv2.getWindowProperty("YOLOv8 Combo", cv2.WND_PROP_VISIBLE) < 1:
+    if cv2.getWindowProperty("YOLOv8 Detection", cv2.WND_PROP_VISIBLE) < 1:
         break
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
@@ -86,3 +84,4 @@ if use_realsense:
 else:
     cap.release()
 cv2.destroyAllWindows()
+
