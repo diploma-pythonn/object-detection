@@ -9,7 +9,7 @@ try:
     import pyrealsense2 as rs
     use_realsense = True
 except ImportError:
-    use_realsense = False  # Set to False to open for laptop webcam
+    use_realsense = False  # Set False- to open for laptop webcam,set true if use realseance  
 
 # Load all models
 models = [
@@ -84,4 +84,5 @@ if use_realsense:
 else:
     cap.release()
 cv2.destroyAllWindows()
+
 
