@@ -89,6 +89,3 @@ if use_realsense:
 else:
     cap.release()
 cv2.destroyAllWindows()
-
-
-
