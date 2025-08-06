@@ -9,16 +9,16 @@ try:
     import pyrealsense2 as rs
     use_realsense = True
 except ImportError:
-    use_realsense = False  # Set False- to open for laptop webcam,set true if use realseance  
+    use_realsense = False  # Set to False to open for laptop webcam
 
 # Load all models
 models = [
-    YOLO(r"D:\Stationary (1)\runs (1)\detect (1)\train (1)\weights (1)\best (1).pt"),
-    YOLO(r"D:\calendar\runs\detect\train4\weights\best.pt"),
-    YOLO(r"D:\IDcard\runs\detect\train4\weights\best.pt"),
-    YOLO(r"D:\pen\runs\detect\train3\weights\best.pt"),
-    YOLO(r"D:\person detection-20250719T153046Z-1-001\person detection\runs\detect\train\weights\best.pt"),
-    YOLO("yolov8s.pt")
+   YOLO(r"D:\new objects\calendar\runs\detect\train4\weights\best.pt"),
+   YOLO(r"D:\new objects\IDcard\runs\detect\train4\weights\best.pt"),
+   YOLO(r"D:\new objects\pen\runs\detect\train3\weights\best.pt"),
+   YOLO(r"D:\new objects\Stationary (1)\runs (1)\detect (1)\train (1)\weights (1)\best (1).pt"),
+   YOLO(r"D:\person detection-20250719T153046Z-1-001\person detection\runs\detect\train\weights\best.pt"),
+   YOLO("yolov8s.pt")
 ]
 
 # Color per class label
@@ -42,6 +42,8 @@ else:
 cv2.namedWindow("YOLOv8 Detection", cv2.WINDOW_NORMAL)
 print("🔁 Press 'q' to quit...")
 
+CONF_THRESHOLD = 0.3  # Set confidence threshold
+
 while True:
     # Get frame
     if use_realsense:
@@ -57,10 +59,13 @@ while True:
 
     # Run all models
     for model in models:
-        results = model(frame, verbose=False)[0]
+        results = model.predict(frame, conf=CONF_THRESHOLD, verbose=False)[0]
         for box in results.boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             conf = float(box.conf)
+            if conf < CONF_THRESHOLD:
+                print(f"Ignored low confidence: {model.names[int(box.cls)]} ({conf:.2f})")
+                continue
             cls = int(box.cls)
             label_name = model.names[cls]
             label = f"{label_name} {conf*100:.1f}%"
@@ -84,5 +89,6 @@ if use_realsense:
 else:
     cap.release()
 cv2.destroyAllWindows()
+
 
 
