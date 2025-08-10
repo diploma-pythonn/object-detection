@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 2
+names: ['bottle', 'thermo flask']
+
+roboflow:
+  workspace: anu-5hooe
+  project: bottle-wjsnz-ws90k
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/anu-5hooe/bottle-wjsnz-ws90k/dataset/1
